@@ -45,13 +45,13 @@ brew install \
   libass \
   freetype \
   openjpeg \
-  webp \
-  speex \
-  pkg-config
+  pkg-config 
+# webp \
+# speex \
 
 cd "${dirName}"
 
-make clean || true
+# make clean || true
 
 ./configure \
   --prefix=$PREFIX \
@@ -84,12 +84,24 @@ make clean || true
 
 
 make -j4
-
 make install
-
 
 echo "copying dependents..."
 dict_ffmpeg_path="${PREFIX}/bin/ffmpeg"
 dict_lib_path="${PREFIX}/lib"
 cd ../../macos
 python3 dependents.py copy-dependents -t "${dict_ffmpeg_path}" -o "${dict_lib_path}"
+
+pkgconfig_dir="${dict_lib_path}/pkgconfig"
+if [ -d "${pkgconfig_dir}" ]; then
+  echo "rewriting pkg-config files in ${pkgconfig_dir}..."
+  for pc in "${pkgconfig_dir}"/*.pc; do
+    [ -f "${pc}" ] || continue
+    sed -E -i '' \
+      -e 's|^prefix=.*$|prefix=\${pcfiledir}/../..|' \
+      -e 's|^exec_prefix=.*$|exec_prefix=\${prefix}|' \
+      -e 's|^libdir=.*$|libdir=\${pcfiledir}/..|' \
+      -e 's|^includedir=.*$|includedir=\${prefix}/include|' \
+      "${pc}"
+  done
+fi

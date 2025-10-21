@@ -36,6 +36,9 @@ def run_cmd(args):
 
 
 def parse_dependencies(file_path):
+    if not os.path.exists(file_path):
+       raise FileNotFoundError(f"parse_dependencies file not found: {file_path}")
+
     out = run_cmd(["otool", "-L", file_path])
     lines = out.splitlines()
     deps = []
@@ -55,6 +58,9 @@ def parse_dependencies(file_path):
 
 
 def get_rpaths(file_path):
+    if not os.path.exists(file_path):
+       raise FileNotFoundError(f"get_rpaths file not found: {file_path}")
+
     out = run_cmd(["otool", "-l", file_path])
     lines = out.splitlines()
     rpaths = []
