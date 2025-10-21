@@ -254,7 +254,7 @@ if __name__ == "__main__":
 
     dependents_parser = subparsers.add_parser("copy-dependents")
     dependents_parser.add_argument("-t", "--target", type=str, required=True, help="target file")
-    dependents_parser.add_argument("-o", "--output", type=str, required=True, help="output directory")
+    dependents_parser.add_argument("-o", "--output", type=str, required=False, help="output directory, default is the same as the target file")
 
     rpath_parser = subparsers.add_parser("set-rpath")
     rpath_parser.add_argument("-t", "--target", type=str, required=True, help="target file or directory")
@@ -266,6 +266,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.command == "copy-dependents":
+        if args.output is None:
+            args.output = os.path.dirname(args.target)
+            print(f"output directory is not specified, using the same as the target file: {args.output}")
         result = copy_dependents(args.target, args.output)["unsupport_files"]
         if len(result) > 0:
             print(f"copy_dependents unsupport files: {result}")
