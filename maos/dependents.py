@@ -298,7 +298,7 @@ if __name__ == "__main__":
                 deps.update(parse_dependencies(path))
                 rpaths.update(get_rpaths(path))
 
-        print(f"**{args.target}**")
+        print(f"**********{args.target}**********\n")
         print(f"dependencies:")
         for dep in deps:
             print(f"==> {dep}{' (system)' if is_system_library(dep) else ''}")
