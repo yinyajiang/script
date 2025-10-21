@@ -285,18 +285,18 @@ if __name__ == "__main__":
             if len(result) > 0:
                 print(f"set_file_rpath_depentents unsupport files: {result}")
     elif args.command == "print":
-        deps = []
-        rpaths = []
+        deps = set()
+        rpaths = set()
         if not os.path.isdir(args.target):
-            deps = parse_dependencies(args.target)
-            rpaths = get_rpaths(args.target)
+            deps.update(parse_dependencies(args.target))
+            rpaths.update(get_rpaths(args.target))
         else:
             for file in os.listdir(args.target):
                 path = os.path.join(args.target, file)
                 if is_link(path) or os.path.isdir(path):
                     continue
-                deps.extend(parse_dependencies(path))
-                rpaths.extend(get_rpaths(path))
+                deps.update(parse_dependencies(path))
+                rpaths.update(get_rpaths(path))
 
         print(f"**{args.target}**")
         print(f"dependencies:")
