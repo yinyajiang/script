@@ -83,11 +83,32 @@ def get_rpaths(file_path):
 def expand_special_path(raw_path, loader_dir, exec_path, rpaths):
 
     def expand_anchor(p):
-        if p.startswith("@loader_path/"):
-            return os.path.normpath(os.path.join(loader_dir, p[len("@loader_path/"):]))
-        if p.startswith("@executable_path/"):
-            return os.path.normpath(os.path.join(exec_path, p[len("@executable_path/"):]))
-        return p
+        rel_dirs = None
+        suffix = None
+        if p.startswith("@loader_path"):
+            rel_dirs = loader_dir
+            suffix = p[len("@loader_path"):].lstrip("/")
+        elif p.startswith("@executable_path"):
+            rel_dirs = exec_path
+            suffix = p[len("@executable_path"):].lstrip("/")
+        elif p.startswith("/"):
+            return p
+        elif not str.startswith(p, "@"):
+            rel_dirs = loader_dir + exec_path
+            suffix = p
+        else:
+            raise ValueError(f"invalid special path: {p}")
+
+        if isinstance(rel_dirs, str):
+            rel_dirs = [rel_dirs]
+
+        for rel_dir in rel_dirs:
+            if not rel_dir:
+                continue
+            candidate = os.path.normpath(os.path.join(rel_dir, suffix))
+            if os.path.exists(candidate):
+                return candidate
+        return candidate
 
     if raw_path.startswith("/"):
         return raw_path
@@ -96,8 +117,8 @@ def expand_special_path(raw_path, loader_dir, exec_path, rpaths):
         return expand_anchor(raw_path)
 
     # 依赖项为 @rpath 开头，逐个 RPATH 尝试解析
-    if raw_path.startswith("@rpath/"):
-        tail = raw_path[len("@rpath/"):]
+    if raw_path.startswith("@rpath"):
+        tail = raw_path[len("@rpath"):].lstrip("/")
         for rp in rpaths:
             base = expand_anchor(rp)
             if not base:
@@ -124,8 +145,12 @@ def install_name_id(file_path, id):
 
 
 def add_rpath(file_path, rpath):
-    run_cmd(["install_name_tool", "-add_rpath", rpath, file_path])
-
+    try:
+        run_cmd(["install_name_tool", "-add_rpath", rpath, file_path])
+    except Exception as exc:
+        if "would duplicate path, file already has LC_RPATH for" in str(exc):
+            return
+        raise exc
 
 
 def relative_path(dir_path, a):
@@ -151,8 +176,7 @@ def copy_dependents(src_path, output_dir):
     unsupport_files = set()
     src_rpaths = []
     exec_path = os.path.dirname(src_path)
-    if not src_is_dylib:
-        src_rpaths = get_rpaths(src_path)
+    src_rpaths = get_rpaths(src_path)
     ensure_dir(output_dir)
 
     def process_one(file_path):
@@ -166,10 +190,7 @@ def copy_dependents(src_path, output_dir):
         deps = parse_dependencies(abs_file)
 
         for dep in deps:
-            if src_is_dylib and dep.startswith("@"):
-                unsupport_files.add(dep)
-                continue
-            resolved = expand_special_path(dep, loader_dir, exec_path, rpaths)
+            resolved = expand_special_path(dep, [loader_dir, output_dir], [exec_path, output_dir], rpaths)
             if not resolved:
                 unsupport_files.add(dep)
                 continue
@@ -181,11 +202,18 @@ def copy_dependents(src_path, output_dir):
             dst_path = os.path.join(output_dir, basename)
  
             if not os.path.exists(dst_path):
-                copy_link_and_file(resolved, dst_path)
-                copied_files.add(resolved)
+                if os.path.exists(resolved):
+                    copy_link_and_file(resolved, dst_path)
+                    copied_files.add(resolved)
+                else:
+                    if os.path.basename(os.path.realpath(resolved)) == os.path.basename(abs_file):
+                        install_name_id(abs_file, "@rpath/" + os.path.basename(abs_file))
+                    else:
+                        unsupport_files.add(dep)
+                    continue
 
             # 递归处理该依赖
-            process_one(resolved)
+            process_one(dst_path)
 
     process_one(os.path.abspath(src_path))
 
