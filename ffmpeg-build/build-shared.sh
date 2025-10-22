@@ -44,10 +44,9 @@ brew install \
   fdk-aac \
   libass \
   freetype \
-  openjpeg \
   pkg-config 
 # webp \
-# speex \
+
 
 cd "${dirName}"
 
@@ -75,12 +74,10 @@ cd "${dirName}"
   --enable-libass \
   --enable-libfreetype \
   --enable-optimizations \
-  --enable-libopenjpeg \
+  --pkg-config-flags="--static" \
   --disable-autodetect
 # 禁用自动检测外部库, 避免引入不必要的依赖
-# --pkg-config-flags="--static" \
 # --enable-libwebp \
-#  --enable-libspeex \
 
 
 make -j4
