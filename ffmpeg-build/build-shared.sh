@@ -6,6 +6,7 @@ PREFIX="$(pwd)/dist"
 
 FFMPEG_TARBALL="ffmpeg-7.1.1.tar.xz"
 FFMPEG_URL="https://ffmpeg.org/releases/${FFMPEG_TARBALL}"
+export MACOSX_DEPLOYMENT_TARGET=11.0
 
 download_file() {
   local url="$1"
@@ -29,29 +30,45 @@ echo "dirName: ${dirName}"
 if [ ! -d "${dirName}" ]; then
   tar xvf "${FFMPEG_TARBALL}"
 fi
-
-# 安装依赖库
-echo "installing dependencies..."
-brew install \
-  nasm \
-  yasm \
-  x264 \
-  x265 \
-  libvpx \
-  opus \
-  libvorbis \
-  lame \
-  fdk-aac \
-  libass \
-  freetype \
-  pkg-config 
-# webp \
-
-
+echo "cd ${dirName}"
 cd "${dirName}"
+pwd
+
+# 安装依赖库（已安装则跳过），并且不触发 brew 自动更新
+echo "installing dependencies..."
+export HOMEBREW_NO_AUTO_UPDATE=1
+deps=(
+  nasm
+  yasm
+  x264
+  x265
+  libvpx
+  opus
+  libvorbis
+  lame
+  fdk-aac
+  libass
+  freetype
+  pkg-config
+  dav1d
+  # webp
+)
+
+for dep in "${deps[@]}"; do
+  if brew ls --versions "${dep}" >/dev/null 2>&1; then
+    echo "- ${dep} already installed, skipping"
+  else
+    echo "- installing ${dep}..."
+    brew install "${dep}"
+  fi
+done
+
 
 # make clean || true
 
+echo "compile ffmpeg..."
+
+MIN_VERSION_FLAGS="-mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET}"
 ./configure \
   --prefix=$PREFIX \
   --disable-ffplay \
@@ -66,6 +83,7 @@ cd "${dirName}"
   --enable-nonfree \
   --enable-libx264 \
   --enable-libx265 \
+  --enable-libdav1d \
   --enable-libvpx \
   --enable-libopus \
   --enable-libvorbis \
@@ -74,11 +92,12 @@ cd "${dirName}"
   --enable-libass \
   --enable-libfreetype \
   --enable-optimizations \
+  --extra-cflags="${MIN_VERSION_FLAGS}" \
+  --extra-ldflags="${MIN_VERSION_FLAGS}" \
   --pkg-config-flags="--static" \
   --disable-autodetect
 # 禁用自动检测外部库, 避免引入不必要的依赖
 # --enable-libwebp \
-
 
 make -j4
 make install
