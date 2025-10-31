@@ -69,6 +69,14 @@ done
 echo "compile ffmpeg..."
 
 MIN_VERSION_FLAGS="-mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET}"
+
+
+BREW_PREFIX="$(brew --prefix)"
+echo "BREW_PREFIX: $BREW_PREFIX"
+export PKG_CONFIG_PATH="$BREW_PREFIX/lib/pkgconfig:$BREW_PREFIX/opt/lame/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+EXTRA_INC="-I$BREW_PREFIX/include"
+EXTRA_LIB="-L$BREW_PREFIX/lib"
+
 ./configure \
   --prefix=$PREFIX \
   --disable-ffplay \
@@ -92,8 +100,8 @@ MIN_VERSION_FLAGS="-mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET}"
   --enable-libass \
   --enable-libfreetype \
   --enable-optimizations \
-  --extra-cflags="${MIN_VERSION_FLAGS}" \
-  --extra-ldflags="${MIN_VERSION_FLAGS}" \
+  --extra-cflags="${MIN_VERSION_FLAGS} ${EXTRA_INC}" \
+  --extra-ldflags="${MIN_VERSION_FLAGS} ${EXTRA_LIB}" \
   --pkg-config-flags="--static" \
   --disable-autodetect
 # 禁用自动检测外部库, 避免引入不必要的依赖
