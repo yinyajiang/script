@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-ENABLE_FLOAT="OFF"
+ENABLE_FLOAT="ON"
 # install prefix
 PREFIX="$(pwd)/dist_float_$ENABLE_FLOAT"
 
@@ -77,3 +77,23 @@ fi
 
 
 
+# 重写 CMake 配置中的 FFTW3f 路径为相对路径，避免绝对路径
+cmake_dir="${PREFIX}/lib/cmake"
+if [ "${ENABLE_FLOAT}" == "ON" ]; then
+  cmake_dir="${cmake_dir}/fftw3f"
+  cmake_name="FFTW3f"
+else
+  cmake_dir="${cmake_dir}/fftw3"
+  cmake_name="FFTW3"
+fi
+if [ -d "${cmake_dir}" ]; then
+  echo "rewriting CMake config files in ${cmake_dir}..."
+  for cmake_file in "${cmake_dir}"/*.cmake; do
+    [ -f "${cmake_file}" ] || continue
+    sed -E -i '' \
+      -e "s|^set \(${cmake_name}_LIBRARY_DIRS .*\)$|set (${cmake_name}_LIBRARY_DIRS \"\${CMAKE_CURRENT_LIST_DIR}/../..\")|" \
+      -e "s|^set \(${cmake_name}_INCLUDE_DIRS .*\)$|set (${cmake_name}_INCLUDE_DIRS \"\${CMAKE_CURRENT_LIST_DIR}/../../../include\")|" \
+      "${cmake_file}"
+  done
+  echo "done!!!"
+fi
