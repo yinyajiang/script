@@ -72,6 +72,7 @@ if [ -d "${pkgconfig_dir}" ]; then
       -e 's|^includedir=.*$|includedir=\${prefix}/include|' \
       "${pc}"
   done
+  echo "done!!!"
 fi
 
 
