@@ -55,7 +55,7 @@ done
 echo "compile fftw..."
 
 # 将CMakeLists.txt拷贝到当前目录,覆盖原来的CMakeLists.txt
-cp ../CMakeLists_${dirName}.txt .
+cp ../CMakeLists_${dirName}.txt CMakeLists.txt
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PREFIX" -DCMAKE_OSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET" -DENABLE_FLOAT="${ENABLE_FLOAT}"
 cmake --build build
 cmake --install build
