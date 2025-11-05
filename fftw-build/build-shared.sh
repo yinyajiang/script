@@ -72,12 +72,9 @@ if [ -d "${pkgconfig_dir}" ]; then
       -e 's|^includedir=.*$|includedir=\${prefix}/include|' \
       "${pc}"
   done
-  echo "done!!!"
 fi
 
 
-
-# 重写 CMake 配置中的 FFTW3f 路径为相对路径，避免绝对路径
 cmake_dir="${PREFIX}/lib/cmake"
 if [ "${ENABLE_FLOAT}" == "ON" ]; then
   cmake_dir="${cmake_dir}/fftw3f"
