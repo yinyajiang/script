@@ -1,8 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
+ENABLE_FLOAT="OFF"
 # install prefix
-PREFIX="$(pwd)/dist"
+PREFIX="$(pwd)/dist_float_$ENABLE_FLOAT"
 
 FFTW_TARBALL="fftw-3.3.10.tar.gz"
 FFTW_URL="https://www.fftw.org/${FFTW_TARBALL}"
@@ -54,9 +55,25 @@ done
 echo "compile fftw..."
 
 # 将CMakeLists.txt拷贝到当前目录,覆盖原来的CMakeLists.txt
-cp ../CMakeLists.txt .
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PREFIX" -DCMAKE_OSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET"
+cp ../CMakeLists_${dirName}.txt .
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PREFIX" -DCMAKE_OSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET" -DENABLE_FLOAT="${ENABLE_FLOAT}"
 cmake --build build
 cmake --install build
 
-echo done!!
+pkgconfig_dir="${PREFIX}/lib/pkgconfig"
+if [ -d "${pkgconfig_dir}" ]; then
+  echo "rewriting pkg-config files in ${pkgconfig_dir}..."
+  for pc in "${pkgconfig_dir}"/*.pc; do
+    [ -f "${pc}" ] || continue
+    sed -E -i '' \
+      -e 's|^prefix=.*$|prefix=\${pcfiledir}/../..|' \
+      -e 's|^exec_prefix=.*$|exec_prefix=\${prefix}|' \
+      -e 's|^libdir=.*$|libdir=\${pcfiledir}/..|' \
+      -e 's|^includedir=.*$|includedir=\${prefix}/include|' \
+      "${pc}"
+  done
+  echo "done!!!"
+fi
+
+
+
