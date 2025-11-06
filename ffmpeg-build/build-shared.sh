@@ -116,6 +116,8 @@ dist_lib_path="${PREFIX}/lib"
 cd ../../macos
 python3 dependents.py copy-dependents -t "${dist_ffmpeg_path}" -o "${dist_lib_path}"
 
+install_name_tool -add_rpath "@executable_path/../Frameworks" "${dist_ffmpeg_path}"
+
 pkgconfig_dir="${dist_lib_path}/pkgconfig"
 if [ -d "${pkgconfig_dir}" ]; then
   echo "rewriting pkg-config files in ${pkgconfig_dir}..."
