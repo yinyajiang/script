@@ -293,7 +293,7 @@ if __name__ == "__main__":
 
     rpath_parser = subparsers.add_parser("set-rpath")
     rpath_parser.add_argument("-t", "--target", type=str, required=True, help="target file or directory")
-    rpath_parser.add_argument("-d", "--dir", type=str, required=True, help="dependent directory")
+    rpath_parser.add_argument("-d", "--dir", type=str, required=False, help="dependent directory")
     rpath_parser.add_argument("-n", "--no-exist", action="store_true", help="not must exist")
 
     print_parser = subparsers.add_parser("print")
