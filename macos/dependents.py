@@ -223,7 +223,7 @@ def copy_dependents(src_path, output_dir):
     }
 
 
-def set_file_rpath_depentents(path, depent_dir):
+def set_file_rpath_depentents(path, depent_dir, must_exist=True):
     unsupport_files = set()
     deps = parse_dependencies(path)
     for dep in deps:
@@ -232,6 +232,13 @@ def set_file_rpath_depentents(path, depent_dir):
         if dep.startswith("@"):
             continue
         name = os.path.basename(dep)
+
+        if not must_exist:
+            if os.path.basename(os.path.realpath(dep)) == os.path.basename(os.path.realpath(path)):
+                install_name_id(path, "@rpath/" + os.path.basename(dep))
+            else:
+                install_name_change(path, dep, f"@rpath/{name}")
+            continue
 
         if os.path.exists(os.path.join(depent_dir, name)):
             if os.path.basename(os.path.realpath(dep)) == os.path.basename(os.path.realpath(path)):
@@ -261,14 +268,14 @@ def set_file_rpath_depentents(path, depent_dir):
     }
 
 
-def set_dir_rpath_depentents(dir, depent_dir):
+def set_dir_rpath_depentents(dir, depent_dir, must_exist=True):
     unsupport_files = set()
     for file in os.listdir(dir):
         path = os.path.join(dir, file)
         if is_link(path) or os.path.isdir(path):
             continue
 
-        result = set_file_rpath_depentents(path, depent_dir)
+        result = set_file_rpath_depentents(path, depent_dir, must_exist)
         unsupport_files.update(result["unsupport_files"])
     return {
         "unsupport_files": list(unsupport_files),
@@ -287,6 +294,7 @@ if __name__ == "__main__":
     rpath_parser = subparsers.add_parser("set-rpath")
     rpath_parser.add_argument("-t", "--target", type=str, required=True, help="target file or directory")
     rpath_parser.add_argument("-d", "--dir", type=str, required=True, help="dependent directory")
+    rpath_parser.add_argument("-n", "--no-exist", action="store_true", help="not must exist")
 
     print_parser = subparsers.add_parser("print")
     print_parser.add_argument("-t", "--target", type=str, required=True, help="target file")
@@ -313,7 +321,7 @@ if __name__ == "__main__":
             exit(1)
     elif args.command == "set-rpath":
         if os.path.isdir(args.target):
-            result = set_dir_rpath_depentents(args.target, args.dir)["unsupport_files"]
+            result = set_dir_rpath_depentents(args.target, args.dir, not args.no_exist)["unsupport_files"]
             if len(result) > 0:
                 print(f"set_dir_rpath_depentents unsupport files: {result}")
                 exit(1)
