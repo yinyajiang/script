@@ -259,9 +259,9 @@ def set_file_rpath_depentents(path, depent_dir, must_exist=True):
         unsupport_files.add(dep)
     
     if not path.endswith(".dylib"):
-        add_rpath(path, "@executable_path")
+        add_rpath(path, "@executable_path/")
         if depent_dir != os.path.dirname(path):
-            add_rpath(path, relative_path(depent_dir, os.path.dirname(path)))
+            add_rpath(path, "@executable_path/" + relative_path(depent_dir, os.path.dirname(path)))
 
     return {
         "unsupport_files": list(unsupport_files),
