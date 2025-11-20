@@ -293,8 +293,8 @@ if __name__ == "__main__":
 
     rpath_parser = subparsers.add_parser("set-rpath")
     rpath_parser.add_argument("-t", "--target", type=str, required=True, help="target file or directory")
-    rpath_parser.add_argument("-d", "--dir", type=str, required=False, help="dependent directory")
-    rpath_parser.add_argument("-n", "--no-exist", action="store_true", help="not must exist")
+    rpath_parser.add_argument("-d", "--dir", type=str, required=False, help="dependent files directory")
+    rpath_parser.add_argument("-n", "--no-exist", action="store_true", help="dependent not must exist")
 
     print_parser = subparsers.add_parser("print")
     print_parser.add_argument("-t", "--target", type=str, required=True, help="target file")
@@ -326,7 +326,7 @@ if __name__ == "__main__":
                 print(f"set_dir_rpath_depentents unsupport files: {result}")
                 exit(1)
         else:
-            result = set_file_rpath_depentents(args.target, args.dir)["unsupport_files"]
+            result = set_file_rpath_depentents(args.target, args.dir, not args.no_exist)["unsupport_files"]
             if len(result) > 0:
                 print(f"set_file_rpath_depentents unsupport files: {result}")
     elif args.command == "print":
